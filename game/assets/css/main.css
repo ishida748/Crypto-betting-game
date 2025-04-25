@@ -1,0 +1,10 @@
+@font-face {
+  font-family: "IaCartoonerie";
+  src: url("../fonts/laCartoonerie.TTF");
+  font-weight: normal;
+  font-kerning: normal;
+}
+
+* {
+  box-sizing: border-box;
+}

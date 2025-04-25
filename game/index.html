@@ -1,0 +1,568 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DICKBUTT Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="assets/js/tailwind.config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <style type="text/tailwindcss">
+      body {
+        @apply bg-base font-default p-5;
+      }
+
+      .game {
+        @apply h-[519px] bg-gray/40;
+      }
+
+      .settings-pane {
+      }
+      .settings-pane .tabs {
+        @apply bg-light p-5;
+      }
+
+      .settings-pane .header {
+        @apply flex items-center justify-between;
+      }
+
+      .settings-pane .tabs .form {
+        @apply grid grid-cols-1 md:grid-cols-3 gap-5;
+      }
+
+      .settings-pane .tabs .form .input-field {
+        @apply flex flex-col gap-2;
+      }
+
+      .input-field .input-container {
+        @apply border-2 border-dark p-2 flex gap-2 items-center rounded-md;
+      }
+
+      .input-field .input-container input {
+        @apply flex-1 bg-transparent text-xl focus:outline-none;
+      }
+
+      .input-container .input-options {
+        @apply flex gap-2 flex-1;
+      }
+
+      .input-container .input-options button {
+        @apply p-1 bg-gray rounded-md px-2 flex-1;
+      }
+
+      .input-container .input-options button.active {
+        @apply bg-dark text-white;
+      }
+
+      .start-button {
+        @apply p-3 bg-dark text-white rounded-md text-xl;
+      }
+
+      .tab-bar {
+        @apply flex;
+      }
+
+      .tab-bar .tab-bar-item {
+        @apply p-3 px-6 hover:bg-gray/40 transition-colors cursor-pointer;
+      }
+
+      .tab-bar .tab-bar-item.active {
+        @apply border-b-2 border-dark;
+      }
+
+      .game {
+        @apply overflow-hidden p-1 bg-dark;
+      }
+
+      .game .start {
+        @apply w-[201px] bg-gray h-full;
+      }
+
+      .game .road {
+        @apply w-[201px] bg-road  h-full justify-center flex items-center;
+        position: relative;
+      }
+
+      .road:before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 0%;
+        width: 6px;
+        background-image: repeating-linear-gradient(
+          to bottom,
+          #c7c7c7cc,
+          #c7c7c7cc 30px,
+          transparent 30px,
+          transparent 50px
+        );
+      }
+
+      .road .star {
+        @apply absolute z-20 hidden shadow-lg rounded-full;
+      }
+
+      .road.crossed .star {
+        @apply block;
+      }
+
+      .road .tile {
+        @apply translate-y-1/2 relative;
+      }
+
+      .road .tile .multiple-container {
+        @apply shadow-lg rounded-full relative;
+      }
+
+      .road .tile img {
+        @apply size-28;
+      }
+
+      .road .brick {
+        @apply absolute -translate-y-full hidden;
+      }
+
+      .road .multiple {
+        @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl text-light z-10;
+      }
+
+      .road-container {
+        width: 400vw;
+        @apply flex h-full relative;
+        transition: left 0.3s ease, top 0.3s ease; /* Smooth transition */
+      }
+
+      .character {
+        @apply flex flex-col absolute top-1/2 -translate-y-1/2 z-40 left-0 gap-2 items-center;
+        transition: left 0.3s ease, top 0.3s ease; /* Smooth transition */
+      }
+
+      .character .counter img {
+        @apply w-32;
+      }
+
+      .character .counter .counter-text {
+        @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-3/4;
+      }
+
+      .character .counter {
+        @apply translate-x-8 translate-y-4 relative;
+      }
+
+      .character .main-character {
+        @apply size-44;
+      }
+
+      .car {
+        @apply absolute size-48 z-50;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="flex items-end justify-between pb-4 flex-row gap-1">
+      <div class="flex gap-2 items-end">
+        <div class="input-field">
+          <label for="balance">Balance</label>
+          <div class="input-container">
+            <div class="text-xl opacity-40">$</div>
+            <div
+              data-config="betAmount"
+              name="balance"
+              id="balance"
+              readonly
+              type="number"
+              class="w-52 text-xl"
+              placeholder="0"
+            ></div>
+          </div>
+        </div>
+        <!-- <button class="p-3 bg-dark text-white rounded-md">Wallet</button> -->
+        <button
+          id="connect-wallet-btn"
+          class="p-3 bg-dark text-white rounded-md"
+        >
+          Wallet
+        </button>
+      </div>
+
+      <div class="loss text-lg transition-all duration-300 opacity-0" id="loss">
+        0
+      </div>
+
+      <div class="flex gap-4">
+        <button
+          id="deposit-btn"
+          class="p-3 bg-green-500 text-white rounded-md"
+          disabled
+        >
+          Deposit
+        </button>
+        <button
+          id="withdraw-btn"
+          class="p-3 bg-red-500 text-white rounded-md"
+          disabled
+        >
+          Withdraw
+        </button>
+      </div>
+    </div>
+    <div class="game">
+      <div class="road-container">
+        <div class="character" id="character">
+          <div class="counter">
+            <img src="assets/images/count.svg" alt="" />
+            <span id="counter-text" class="counter-text">$0</span>
+          </div>
+          <img
+            class="main-character"
+            src="assets/images/character.svg"
+            alt=""
+          />
+        </div>
+        <div class="start">
+          <img
+            src="assets/images/start.svg"
+            alt="start"
+            class="h-[519px] object-cover"
+          />
+        </div>
+      </div>
+    </div>
+    <div class="settings-pane">
+      <div class="header">
+        <div class="tab-bar">
+          <div
+            data-tab="manual-settings"
+            id="manual-tab"
+            class="tab-bar-item active"
+          >
+            Manual
+          </div>
+          <div
+            data-tab="automatic-settings"
+            id="automatic-tab"
+            class="tab-bar-item"
+          >
+            Rules
+          </div>
+        </div>
+        <div>
+          <svg
+            class="size-6"
+            viewBox="0 0 35 35"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <g opacity="0.4">
+              <path
+                d="M22.0299 5.08948C22.1152 4.91796 22.2335 4.76492 22.3779 4.6391C22.5224 4.51329 22.6902 4.41717 22.8718 4.35622C23.0534 4.29528 23.2452 4.27072 23.4363 4.28393C23.6274 4.29714 23.8141 4.34788 23.9855 4.43323C26.4188 5.64066 28.4665 7.50368 29.8978 9.81234C31.3291 12.121 32.0872 14.7835 32.0866 17.4999C32.0872 20.2163 31.3291 22.8788 29.8978 25.1875C28.4665 27.4961 26.4188 29.3591 23.9855 30.5666C23.8139 30.6535 23.6267 30.7055 23.4348 30.7198C23.2429 30.734 23.0501 30.7101 22.8675 30.6495C22.6849 30.5889 22.516 30.4927 22.3708 30.3666C22.2255 30.2404 22.1066 30.0867 22.021 29.9144C21.9353 29.7421 21.8846 29.5545 21.8718 29.3625C21.859 29.1706 21.8843 28.9779 21.9463 28.7958C22.0083 28.6136 22.1057 28.4455 22.2329 28.3011C22.3601 28.1568 22.5147 28.039 22.6876 27.9547C24.6347 26.9889 26.2733 25.4983 27.4186 23.6511C28.564 21.8038 29.1705 19.6734 29.1699 17.4999C29.1705 15.3264 28.564 13.196 27.4186 11.3487C26.2733 9.50151 24.6347 8.01095 22.6876 7.04511C22.3416 6.87286 22.0781 6.57027 21.9551 6.20385C21.832 5.83742 21.8595 5.43714 22.0314 5.09094L22.0299 5.08948ZM8.75325 11.6666H5.83659C5.06304 11.6666 4.32117 11.9739 3.77419 12.5208C3.22721 13.0678 2.91992 13.8097 2.91992 14.5832V20.4166C2.91992 21.1901 3.22721 21.932 3.77419 22.479C4.32117 23.0259 5.06304 23.3332 5.83659 23.3332H8.75325L15.1116 28.6314C15.3245 28.8087 15.5835 28.9217 15.8584 28.9572C16.1332 28.9926 16.4124 28.949 16.6634 28.8315C16.9143 28.714 17.1266 28.5274 17.2754 28.2936C17.4241 28.0598 17.5032 27.7885 17.5033 27.5114V7.48844C17.5032 7.21134 17.4241 6.94 17.2754 6.7062C17.1266 6.4724 16.9143 6.28581 16.6634 6.1683C16.4124 6.05078 16.1332 6.00719 15.8584 6.04264C15.5835 6.07808 15.3245 6.1911 15.1116 6.36844L8.75325 11.6666Z"
+                fill="#1D1D21"
+              />
+              <path
+                d="M24.502 12.2499C24.3871 12.0967 24.2431 11.9676 24.0783 11.87C23.9135 11.7725 23.7311 11.7083 23.5415 11.6812C23.3519 11.6541 23.1589 11.6647 22.9734 11.7122C22.7878 11.7597 22.6135 11.8433 22.4603 11.9582C22.3071 12.0731 22.178 12.2171 22.0804 12.3819C21.9829 12.5467 21.9187 12.7291 21.8916 12.9187C21.8645 13.1082 21.8751 13.3013 21.9226 13.4868C21.9701 13.6723 22.0537 13.8467 22.1686 13.9999C22.9022 14.9755 23.3353 16.1845 23.3353 17.4999C23.3353 18.8153 22.9022 20.0243 22.1686 20.9999C21.9366 21.3093 21.8369 21.6983 21.8916 22.0811C21.9463 22.464 22.1509 22.8095 22.4603 23.0416C22.7697 23.2736 23.1586 23.3733 23.5415 23.3186C23.9244 23.2639 24.2699 23.0593 24.502 22.7499C25.6001 21.2886 26.252 19.4686 26.252 17.4999C26.252 15.5311 25.6001 13.7111 24.502 12.2499Z"
+                fill="#1D1D21"
+              />
+            </g>
+          </svg>
+        </div>
+      </div>
+      <div class="tabs">
+        <div id="manual-settings" class="tab manual">
+          <div class="form">
+            <div class="input-field">
+              <label for="bet-amount">Bet Amount</label>
+              <div class="input-container">
+                <div class="text-xl opacity-40">$</div>
+                <input
+                  data-config="betAmount"
+                  name="bet-amount"
+                  value="0"
+                  id="bet-amount"
+                  type="number"
+                  placeholder="0"
+                />
+                <div
+                  data-config="betAmountOption"
+                  id="bet-amount-option"
+                  class="input-options"
+                >
+                  <button data-config-value="half" type="button" id="half">
+                    1/2
+                  </button>
+                  <button data-config-value="double" type="button" id="double">
+                    2x
+                  </button>
+                  <button data-config-value="max" type="button" id="max">
+                    Max
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="input-field">
+              <label for="difficulty">Difficulty</label>
+              <div class="input-container">
+                <div
+                  data-config="difficulty"
+                  id="difficulty"
+                  class="input-options"
+                >
+                  <button
+                    data-config-value="easy"
+                    type="button"
+                    id="easy"
+                    class="active"
+                  >
+                    Easy
+                  </button>
+                  <button data-config-value="medium" type="button" id="medium">
+                    Medium
+                  </button>
+                  <button data-config-value="hard" type="button" id="hard">
+                    Hard
+                  </button>
+                  <button
+                    data-config-value="nightmare"
+                    type="button"
+                    id="nightmare"
+                  >
+                    Nigthmare
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="input-field">
+              <div>Betting less than $0.01 will enter demo mode</div>
+              <button type="submit" class="start-button">Start Game</button>
+            </div>
+          </div>
+        </div>
+        <br />
+        <div id="automatic-settings" class="tab automatic hidden">
+          <div>
+            User deposite minimum gamble 30% of deposite amount before
+            withdrawal is possible Sould not be too difficult If you do these
+            two things, we are finished
+          </div>
+          <!-- <div class="form">
+            <div class="input-field">
+              <label for="bet-amount">Bet Amount</label>
+              <div class="input-container">
+                <div class="text-xl opacity-40">$</div>
+                <input
+                  data-config="betAmount"
+                  type="number"
+                  placeholder="0"
+                  name="bet-amount"
+                  value="100"
+                  id="bet-amount"
+                />
+                <div
+                  data-config="betAmountOption"
+                  id="bet-amount-option"
+                  class="input-options"
+                >
+                  <button data-config-value="half" type="button" id="half">
+                    1/2
+                  </button>
+                  <button data-config-value="double" type="button" id="double">
+                    2x
+                  </button>
+                  <button data-config-value="max" type="button" id="max">
+                    Max
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="input-field">
+              <label for="difficulty">Difficulty</label>
+              <div class="input-container">
+                <div
+                  data-config="difficulty"
+                  id="difficulty"
+                  class="input-options"
+                >
+                  <button
+                    data-config-value="easy"
+                    type="button"
+                    id="easy"
+                    class="active"
+                  >
+                    Easy
+                  </button>
+                  <button data-config-value="medium" type="button" id="medium">
+                    Medium
+                  </button>
+                  <button data-config-value="hard" type="button" id="hard">
+                    Hard
+                  </button>
+                  <button
+                    data-config-value="nightmare"
+                    type="button"
+                    id="nightmare"
+                  >
+                    Nigthmare
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="input-field">
+              <label for="payout-on-win">Payout on Win</label>
+              <div class="input-container">
+                <div class="text-xl opacity-40">$</div>
+                <input
+                  data-config="payoutOnWin"
+                  id="payout-on-win"
+                  name="payout-on-win"
+                  type="number"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+            <div class="input-field">
+              <label for="number-of-bets">Number of Bets</label>
+              <div class="input-container">
+                <input
+                  data-config="noOfBets"
+                  id="number-of-bets"
+                  name="number-of-bets"
+                  type="number"
+                  placeholder="0"
+                />
+                <div class="text-xl">
+                  <svg
+                    class="size-6"
+                    viewBox="0 0 35 34"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <g opacity="0.4" clip-path="url(#clip0_1_868)">
+                      <path
+                        d="M26.7894 8.83997C21.5017 8.83997 18.8647 12.7731 16.5377 16.2425C14.3059 19.569 12.3788 22.44 8.54368 22.44C5.6999 22.44 3.38657 20.0001 3.38657 17C3.38657 13.9998 5.69857 11.56 8.54096 11.56C10.2817 11.56 11.7247 12.1339 13.0861 13.3729C13.3961 13.6516 13.6953 13.959 13.9714 14.2786C14.4637 14.8471 15.3219 14.9083 15.8903 14.4187C16.4588 13.9264 16.5214 13.0669 16.0304 12.4984C15.6754 12.0904 15.296 11.7014 14.9097 11.356C13.0492 9.66141 10.9671 8.83997 8.54355 8.83997C4.20118 8.83997 0.666504 12.4997 0.666504 17C0.666504 21.5002 4.20118 25.16 8.54361 25.16C13.8313 25.16 16.4683 21.2269 18.7953 17.7575C21.0271 14.4309 22.9542 11.56 26.7893 11.56C29.6331 11.56 31.9464 13.9998 31.9464 17C31.9464 20.0001 29.6344 22.44 26.7921 22.44C25.0513 22.44 23.6083 21.866 22.2469 20.6271C21.9369 20.3483 21.6377 20.0409 21.3616 19.7213C20.868 19.1528 20.0111 19.093 19.4427 19.5812C18.8742 20.0736 18.8116 20.9331 19.3026 21.5016C19.6576 21.9096 20.037 22.2985 20.4232 22.644C22.2837 24.3385 24.3659 25.16 26.7894 25.16C31.1318 25.16 34.6665 21.5002 34.6665 17C34.6665 12.4997 31.1318 8.83997 26.7894 8.83997Z"
+                        fill="#1D1D21"
+                      />
+                    </g>
+                    <defs>
+                      <clipPath id="clip0_1_868">
+                        <rect
+                          width="34"
+                          height="34"
+                          fill="white"
+                          transform="translate(0.666504)"
+                        />
+                      </clipPath>
+                    </defs>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div class="input-field">
+              <label for="on-win">On Win</label>
+              <div class="input-container">
+                <div
+                  data-config="onWinOption"
+                  id="on-win-option"
+                  class="input-options"
+                >
+                  <button
+                    data-config-value="reset"
+                    type="button"
+                    id="reset"
+                    class="active"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    data-config-value="increase"
+                    type="button"
+                    id="increase"
+                  >
+                    Increase
+                  </button>
+                </div>
+                <input
+                  data-config="onWinIncrease"
+                  id="on-win"
+                  name="on-win"
+                  type="number"
+                  placeholder="0"
+                />
+                <div class="text-xl opacity-40">%</div>
+              </div>
+            </div>
+            <div class="input-field">
+              <label for="on-loss">On Loss</label>
+              <div class="input-container">
+                <div
+                  data-config="onLossOption"
+                  id="on-loss-option"
+                  class="input-options"
+                >
+                  <button
+                    data-config-value="reset"
+                    type="button"
+                    id="reset"
+                    class="active"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    data-config-value="increase"
+                    type="button"
+                    id="increase"
+                  >
+                    Increase
+                  </button>
+                </div>
+                <input
+                  data-config="onLossIncrease"
+                  id="on-loss"
+                  name="on-loss"
+                  type="number"
+                  placeholder="0"
+                />
+                <div class="text-xl opacity-40">%</div>
+              </div>
+            </div>
+            <div class="input-field">
+              <label for="stop-on-profit">Stop on profit</label>
+              <div class="input-container">
+                <div class="text-xl opacity-40">+</div>
+                <input
+                  data-config="stopOnProfit"
+                  id="stop-on-profit"
+                  name="stop-on-profit"
+                  type="number"
+                  placeholder="0"
+                />
+                <div class="text-xl opacity-40">$</div>
+              </div>
+            </div>
+            <div class="input-field">
+              <label for="stop-on-loss">Stop on loss</label>
+              <div class="input-container">
+                <div class="text-xl opacity-40">•</div>
+                <input
+                  data-config="stopOnLoss"
+                  id="stop-on-loss"
+                  name="stop-on-loss"
+                  type="number"
+                  placeholder="0"
+                />
+                <div class="text-xl opacity-40">$</div>
+              </div>
+            </div>
+            <div class="input-field">
+              <div>Betting less than $0.01 will enter demo mode</div>
+              <button type="submit" class="start-button">Start Game</button>
+            </div>
+          </div> -->
+        </div>
+      </div>
+    </div>
+    <script src="assets/js/game.js"></script>
+  </body>
+</html>
