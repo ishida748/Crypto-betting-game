@@ -36,6 +36,8 @@ if (typeof window.Buffer === "undefined") {
   };
 }
 
+// Solana Web3 part //
+
 const CAR_IMG = "assets/images/car.svg";
 const TILE_IMG = "assets/images/tile.svg";
 const STAR_IMG = "assets/images/star.svg";
